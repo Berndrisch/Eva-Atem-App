@@ -1,909 +1,1514 @@
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Eva – Atemübung</title>
-<link rel="manifest" href="./manifest.json">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#7ec850">
-<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<style>
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{width:100%;height:100%;overflow:hidden;font-family:'Quicksand',sans-serif;touch-action:manipulation}
-canvas{position:fixed;top:0;left:0;display:block}
-#ui{position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none}
-
-#sound-btn {
-  position: absolute; top: 20px; right: 20px;
-  width: 44px; height: 44px; border-radius: 50%;
-  background: rgba(255,255,255,0.82); border: none; cursor: pointer;
-  font-size: 20px; pointer-events: auto;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-  display: flex; align-items: center; justify-content: center;
-}
-
-/* Week bar */
-#week-bar{
-  position:absolute;top:16px;left:16px;
-  background:rgba(255,255,255,0.82);backdrop-filter:blur(10px);
-  border-radius:20px;padding:8px 14px;pointer-events:auto;
-  display:flex;flex-direction:column;gap:5px;
-  box-shadow:0 2px 12px rgba(0,0,0,0.08);
-}
-.week-top{display:flex;align-items:center;gap:6px;font-size:13px;color:#3a7a2a;font-weight:500}
-.dots{display:flex;gap:4px}
-.dot{width:10px;height:10px;border-radius:50%;background:#d0e8c0;transition:background .3s}
-.dot.on{background:#5db83a}
-
-/* Start button */
-#start-btn{
-  position:absolute;bottom:90px;left:50%;transform:translateX(-50%);
-  width:68px;height:68px;border-radius:50%;
-  background:rgba(255,255,255,0.92);border:none;cursor:pointer;
-  font-size:26px;pointer-events:auto;
-  box-shadow:0 4px 20px rgba(0,0,0,0.14);
-  display:flex;align-items:center;justify-content:center;
-  transition:transform .15s,box-shadow .15s;
-}
-#start-btn:active{transform:translateX(-50%) scale(0.91);box-shadow:0 2px 10px rgba(0,0,0,0.12)}
-
-/* Settings toggle */
-#settings-toggle{
-  position:absolute;bottom:22px;right:20px;
-  width:44px;height:44px;border-radius:50%;
-  background:rgba(255,255,255,0.82);border:none;cursor:pointer;
-  font-size:20px;pointer-events:auto;
-  box-shadow:0 2px 10px rgba(0,0,0,0.1);
-  display:flex;align-items:center;justify-content:center;
-}
-
-/* Settings panel */
-#settings-panel{
-  position:absolute;bottom:0;left:0;right:0;
-  background:rgba(248,253,245,0.97);backdrop-filter:blur(14px);
-  border-radius:26px 26px 0 0;
-  padding:0 20px 30px;
-  transform:translateY(100%);
-  transition:transform .38s cubic-bezier(.4,0,.2,1);
-  max-height:78vh;overflow-y:auto;pointer-events:auto;
-  box-shadow:0 -4px 30px rgba(0,0,0,0.1);
-}
-#settings-panel.open{transform:translateY(0)}
-.handle{width:36px;height:4px;background:#cde8c0;border-radius:2px;margin:14px auto 18px}
-
-.sec-label{font-size:11px;color:#8ab87a;text-transform:uppercase;letter-spacing:.1em;margin-bottom:9px;font-weight:600}
-.section{margin-bottom:20px}
-
-.pill-row{display:flex;gap:7px;flex-wrap:wrap}
-.pill{
-  padding:7px 15px;border-radius:50px;
-  border:2px solid #7ec850;background:transparent;
-  color:#4a7a3a;font-family:'Quicksand',sans-serif;
-  font-size:13px;font-weight:500;cursor:pointer;
-  transition:all .2s;
-}
-.pill.on{background:#7ec850;color:#fff;border-color:#7ec850}
-
-.sl-row{display:flex;align-items:center;gap:10px;margin-bottom:9px}
-.sl-name{font-size:13px;color:#5a7a4a;width:115px;flex-shrink:0}
-.sl-row input[type=range]{flex:1;accent-color:#7ec850;height:4px}
-.sl-val{font-size:12px;color:#7ec850;width:34px;text-align:right;font-weight:600}
-
-.color-grid{display:flex;gap:14px;flex-wrap:wrap}
-.color-item{display:flex;align-items:center;gap:7px;font-size:13px;color:#5a7a4a}
-.color-item input[type=color]{width:30px;height:30px;border:2px solid #d0e8c0;border-radius:50%;padding:0;cursor:pointer;background:none}
-
-/* Completion */
-#completion{
-  position:absolute;inset:0;
-  background:rgba(184,212,240,.95);
-  display:none;align-items:center;justify-content:center;
-  pointer-events:auto;
-}
-#completion.show{display:flex}
-.card{
-  background:#fff;border-radius:28px;padding:32px 28px;
-  max-width:330px;width:92%;text-align:center;
-  box-shadow:0 12px 50px rgba(0,0,0,0.12);
-  animation:card-in .4s cubic-bezier(.175,.885,.32,1.275);
-}
-@keyframes card-in{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
-.card-icon{font-size:52px;margin-bottom:10px}
-.card h2{font-size:22px;color:#3a6a2a;margin-bottom:6px}
-.card-stat{font-size:14px;color:#8a9a80;margin:3px 0}
-.card-week{margin:16px 0;padding:13px;background:#f2fae8;border-radius:14px;font-size:14px;color:#4a7a3a}
-.card-dots{display:flex;justify-content:center;gap:5px;margin-top:8px}
-.card-dot{width:11px;height:11px;border-radius:50%;background:#d0e8c0}
-.card-dot.on{background:#7ec850}
-.card-btn{
-  display:block;width:100%;padding:14px;
-  border-radius:50px;border:none;cursor:pointer;
-  font-family:'Quicksand',sans-serif;font-size:15px;font-weight:600;
-  margin-top:9px;transition:opacity .2s;
-}
-.card-btn:active{opacity:.8}
-.card-btn.primary{background:#7ec850;color:#fff}
-.card-btn.secondary{background:#f0f5ec;color:#6a8a5a}
-
-/* History */
-#history{
-  position:absolute;inset:0;
-  background:rgba(184,212,240,.97);
-  display:none;align-items:center;justify-content:center;
-  pointer-events:auto;
-}
-#history.show{display:flex}
-
-/* Congrats toast */
-#congrats{
-  position:absolute;top:50%;left:50%;
-  transform:translate(-50%,-50%) scale(0);
-  background:#fff;border-radius:22px;padding:24px 30px;
-  text-align:center;box-shadow:0 8px 40px rgba(0,0,0,0.15);
-  transition:transform .4s cubic-bezier(.175,.885,.32,1.275);
-  pointer-events:auto;z-index:200;min-width:230px;
-}
-#congrats.show{transform:translate(-50%,-50%) scale(1)}
-#congrats h3{font-size:19px;color:#3a7a2a;margin-bottom:5px}
-#congrats p{font-size:14px;color:#8aaa7a}
-.congrats-close{
-  margin-top:14px;padding:9px 22px;
-  border-radius:50px;border:none;background:#7ec850;
-  color:#fff;font-family:'Quicksand',sans-serif;
-  font-size:14px;font-weight:600;cursor:pointer;
-}
-
-/* Confetti */
-#confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:300}
-.cp{
-  position:absolute;top:-10px;
-  animation:fall linear forwards;
-}
-@keyframes fall{
-  to{transform:translateY(110vh) rotate(720deg);opacity:0}
-}
-</style>
-</head>
-<body>
-<canvas id="c"></canvas>
-<div id="ui">
-  <div id="week-bar">
-    <div class="week-top">🌱 <span id="wc">0</span>/<span id="wg">5</span> diese Woche</div>
-    <div class="dots" id="wdots"></div>
-  </div>
-
-  <button id="start-btn">▶</button>
-  <button id="settings-toggle">⚙️</button>
-  <button id="sound-btn">🔇</button>
-
-  <div id="settings-panel">
-    <div class="handle"></div>
-    <div class="section">
-      <div class="sec-label">Atemtechnik</div>
-      <div class="pill-row" id="presets"></div>
-    </div>
-    <div class="section" id="custom-box" style="display:none">
-      <div class="sec-label">Eigene Phasen (Sek.)</div>
-      <div class="sl-row"><span class="sl-name">Einatmen</span><input type="range" id="p-in" min="2" max="12" step=".5" value="4"><span class="sl-val" id="v-in">4</span></div>
-      <div class="sl-row"><span class="sl-name">Plateau oben</span><input type="range" id="p-ht" min="0" max="8" step=".5" value="0"><span class="sl-val" id="v-ht">0</span></div>
-      <div class="sl-row"><span class="sl-name">Ausatmen</span><input type="range" id="p-ex" min="2" max="12" step=".5" value="6"><span class="sl-val" id="v-ex">6</span></div>
-      <div class="sl-row"><span class="sl-name">Plateau unten</span><input type="range" id="p-hb" min="0" max="8" step=".5" value="0"><span class="sl-val" id="v-hb">0</span></div>
-
-    </div>
-    <div class="section">
-      <div class="sec-label">Session-Dauer</div>
-      <div class="pill-row" id="durations"></div>
-<div class="section">
-      <div class="sec-label">Klangfarbe (Transposition)</div>
-      <div class="sl-row">
-        <span class="sl-name">Tonhöhe</span>
-        <input type="range" id="p-pitch" min="-12" max="12" step="1" value="0">
-        <span class="sl-val" id="v-pitch">0</span>
-      </div>
- 
-    <div class="section">
-      <div class="sec-label">Amplitude (Wellenhöhe)</div>
-      <div class="sl-row"><span class="sl-name">Höhe</span><input type="range" id="p-amp" min="15" max="58" step="1" value="38"><span class="sl-val" id="v-amp">38%</span></div>
-    </div>
-    <div class="section">
-      <div class="sec-label">Wochenziel</div>
-      <div class="sl-row"><span class="sl-name">Sessions/Woche</span><input type="range" id="p-wg" min="1" max="14" step="1" value="5"><span class="sl-val" id="v-wg">5</span></div>
-    </div>
-    <div class="section">
-      <div class="sec-label">Farben</div>
-      <div class="color-grid">
-        <div class="color-item"><input type="color" id="c-ball" value="#ff6b35"><span>Kugel</span></div>
-        <div class="color-item"><input type="color" id="c-line" value="#ffffff"><span>Linie</span></div>
-        <div class="color-item"><input type="color" id="c-hill" value="#7ec850"><span>Hügel</span></div>
-        <div class="color-item"><input type="color" id="c-sky" value="#a8c8e8"><span>Himmel</span></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Completion overlay -->
-  <div id="completion">
-    <div class="card">
-      <div class="card-icon">🌿</div>
-      <h2>Session abgeschlossen</h2>
-      <p class="card-stat" id="cd-dur"></p>
-      <p class="card-stat" id="cd-pat"></p>
-      <p class="card-stat" id="cd-br"></p>
-      <div class="card-week" id="cd-week"></div>
-      <button class="card-btn primary" id="btn-new">Neue Session</button>
-      <button class="card-btn secondary" id="btn-hist">Verlauf ansehen</button>
-    </div>
-  </div>
-
-  <!-- History overlay -->
-  <div id="history">
-    <div class="card" style="max-width:340px">
-      <h2 style="font-size:18px;color:#3a6a2a;margin-bottom:16px">Letzte 4 Wochen</h2>
-      <canvas id="hc" width="280" height="150" style="border-radius:8px"></canvas>
-      <button class="card-btn secondary" id="btn-close-hist" style="margin-top:14px">Zurück</button>
-    </div>
-  </div>
-
-  <!-- Congrats -->
-  <div id="congrats">
-    <h3>✨ Wochenziel erreicht!</h3>
-    <p>Du bist großartig.</p>
-    <button class="congrats-close" id="btn-congrats">Super! 🎉</button>
-  </div>
-</div>
-
-<div id="confetti"></div>
-
-<script>
-// ═══════════════════════════════════════
-//  EVA – Resonanzatmungs-App
-// ═══════════════════════════════════════
-const canvas = document.getElementById('c');
-const ctx = canvas.getContext('2d');
-let W, H, DPR;
-
-// ─ Zustand ─────────────────────────────
-const S = {
-  running: false,
-  sesTime: 0,       // abgelaufene Sekunden dieser Session
-  sesDur: 600,      // Zieldauer in Sekunden
-  bt: 0,            // Atemzeit (wächst kontinuierlich)
-  rot: 0,           // Kugelrotation
-  squish: 1,        // Quetsch-Faktor
-  squishT: 0,
-  lastPhase: null,
-  breaths: 0,
-  ts: null,         // letzter Timestamp
-  pitchShift: 0, // Transposition in Halbtönen (-12 bis +12)
-  
-// Konfiguration
-  phases: [{phase:'inhale',duration:4},{phase:'exhale',duration:6}],
-  amp: 0.38,
-
-  // Farben
-  cBall: '#ff6b35',
-  cLine: '#ffffff',
-  cHill: '#7ec850',
-  cSky:  '#a8c8e8',
-}; // <-- WICHTIG: Hier wird das S-Objekt sauber geschlossen!
-
-// ─ Audio Engine ────────────────────────
-const AudioEngine = {
-  ctx: null,
-  enabled: false,
-  btn: document.getElementById('sound-btn'),
-
-  init() {
-    // Web Audio API darf erst nach Nutzerinteraktion starten (Browser Policy)
-    if (!this.ctx) {
-      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>Eva – Atemübung</title>
+  <link rel="manifest" href="./manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#7ec850">
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent
     }
-    if (this.ctx.state === 'suspended') {
-      this.ctx.resume();
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Quicksand', sans-serif;
+      touch-action: manipulation
     }
-  },
 
-  toggle() {
-    this.enabled = !this.enabled;
-    this.btn.textContent = this.enabled ? '🔊' : '🔇';
-    if (this.enabled) this.init();
-  },
-
-  playPhase(phaseName) {
-    if (!this.enabled || !this.ctx) return;
-
-    // Finde die Dauer der aktuellen Phase aus dem State
-    const phaseObj = S.phases.find(p => p.phase === phaseName);
-    if (!phaseObj || phaseObj.duration <= 0) return;
-
-    // Akkord-Frequenzen definieren (Polyphonie)
-    let chordFreqs = [];
-    
-    // Einatmen: F-Dur Akkord (F4, A4, C5) - Offen, aktivierend
-    if (phaseName === 'inhale') chordFreqs = [349.23, 440.00, 523.25]; 
-    
-    // Ausatmen: E-Moll Akkord (E4, G4, B4) - Erdend, entspannend
-    if (phaseName === 'exhale') chordFreqs = [329.63, 392.00, 493.88]; 
-    
-if (chordFreqs.length > 0) {
-      const duration = phaseObj.duration;
-      
-      // NEU: Faktor zur logarithmischen Tonhöhenverschiebung berechnen
-      const shiftFactor = Math.pow(2, S.pitchShift / 12); 
-      
-      const masterGain = this.ctx.createGain();
-      masterGain.connect(this.ctx.destination);
-      const now = this.ctx.currentTime;
-      
-      masterGain.gain.setValueAtTime(0, now);
-      masterGain.gain.linearRampToValueAtTime(0.3, now + 0.05); 
-      masterGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-
-      // Für jede Frequenz des Akkords einen Oszillator starten
-      chordFreqs.forEach(baseFreq => {
-        const osc = this.ctx.createOscillator();
-        osc.type = 'triangle'; 
-        
-        // NEU: Basisfrequenz mit dem Transpositions-Faktor multiplizieren
-        osc.frequency.value = baseFreq * shiftFactor; 
-        
-        osc.connect(masterGain);
-        osc.start(now);
-        osc.stop(now + duration); 
-      });
-    }    
-  }
-};
-
-// Event Listener für den Button an die Engine binden
-AudioEngine.btn.addEventListener('click', () => AudioEngine.toggle());
-
-// ─ Easing ──────────────────────────────
-// ... (hier geht dein bestehender Code mit const ease = ... normal weiter)
-
-// ─ Easing ──────────────────────────────
-const ease = t => (1 - Math.cos(t * Math.PI)) / 2;
-
-// ─ Atemwert 0..1 ───────────────────────
-function breathVal(t) {
-  const ph = S.phases;
-  const total = ph.reduce((a,p)=>a+p.duration,0);
-  t = ((t % total)+total)%total;
-  let e=0;
-  for(const p of ph){
-    if(t < e+p.duration){
-      const lt=(t-e)/p.duration;
-      if(p.phase==='inhale')       return ease(lt);
-      if(p.phase==='hold_top')     return 1;
-      if(p.phase==='exhale')       return ease(1-lt);
-      if(p.phase==='hold_bottom')  return 0;
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      display: block
     }
-    e+=p.duration;
-  }
-  return 0;
-}
 
-function currentPhase(t) {
-  const ph = S.phases;
-  const total = ph.reduce((a,p)=>a+p.duration,0);
-  t = ((t % total)+total)%total;
-  let e=0;
-  for(const p of ph){if(t<e+p.duration)return p.phase;e+=p.duration;}
-  return 'inhale';
-}
+    #ui {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none
+    }
 
-// ─ Y auf der Kurve ──────────────────────
-function curveY(x) {
-  const cd = S.phases.reduce((a,p)=>a+p.duration,0);
-  const pps = W/(2*cd);           // Pixel pro Sekunde
-  const bx = W*0.30;
-  const td = (x-bx)/pps;
-  const val = breathVal(S.bt + td);
-  const mid = H*0.50;
-  return mid - (val-0.5)*(S.amp*H);
-}
+    #sound-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.82);
+      border: none;
+      cursor: pointer;
+      font-size: 20px;
+      pointer-events: auto;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
-// ─ Farb-Helfer ─────────────────────────
-function shade(hex, n) {
-  const num=parseInt(hex.replace('#',''),16);
-  const r=Math.max(0,Math.min(255,(num>>16)+n));
-  const g=Math.max(0,Math.min(255,((num>>8)&255)+n));
-  const b=Math.max(0,Math.min(255,(num&255)+n));
-  return '#'+((1<<24)|(r<<16)|(g<<8)|b).toString(16).slice(1);
-}
-function hexToRgba(hex, a) {
-  const num=parseInt(hex.replace('#',''),16);
-  return `rgba(${num>>16},${(num>>8)&255},${num&255},${a})`;
-}
+    /* Week bar */
+    #week-bar {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      background: rgba(255, 255, 255, 0.82);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 8px 14px;
+      pointer-events: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    }
 
-// ─ Zeichnen ─────────────────────────────
-function drawBg() {
-  const grad = ctx.createLinearGradient(0,0,0,H);
-  grad.addColorStop(0, S.cSky);
-  grad.addColorStop(1, shade(S.cSky,25));
-  ctx.fillStyle = grad;
-  ctx.fillRect(0,0,W,H);
-}
+    .week-top {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: #3a7a2a;
+      font-weight: 500
+    }
 
-function drawHills() {
-  ctx.beginPath();
-  ctx.moveTo(0, curveY(0));
-  for(let x=0; x<=W; x+=3) ctx.lineTo(x, curveY(x));
-  ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath();
+    .dots {
+      display: flex;
+      gap: 4px
+    }
 
-  const g = ctx.createLinearGradient(0, H*0.3, 0, H);
-  g.addColorStop(0, S.cHill);
-  g.addColorStop(0.5, shade(S.cHill,-18));
-  g.addColorStop(1, shade(S.cHill,-38));
-  ctx.fillStyle = g;
-  ctx.fill();
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #d0e8c0;
+      transition: background .3s
+    }
 
-  // Lichtreflexion oben auf Hügel
-  ctx.beginPath();
-  ctx.moveTo(0, curveY(0));
-  for(let x=0; x<=W; x+=3) ctx.lineTo(x, curveY(x));
-  ctx.strokeStyle = hexToRgba(shade(S.cHill,40), .35);
-  ctx.lineWidth = 3;
-  ctx.shadowBlur = 0;
-  ctx.stroke();
-}
+    .dot.on {
+      background: #5db83a
+    }
 
-function drawCurve() {
-  ctx.beginPath();
-  ctx.moveTo(0, curveY(0));
-  for(let x=0; x<=W; x+=3) ctx.lineTo(x, curveY(x));
-  ctx.strokeStyle = S.cLine;
-  ctx.lineWidth = 3.5;
-  ctx.shadowColor = 'rgba(255,255,255,0.6)';
-  ctx.shadowBlur = 14;
-  ctx.stroke();
-  ctx.shadowBlur = 0;
-}
+    /* Start button */
+    #start-btn {
+      position: absolute;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.92);
+      border: none;
+      cursor: pointer;
+      font-size: 26px;
+      pointer-events: auto;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.14);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform .15s, box-shadow .15s;
+    }
 
-function drawBall() {
-  const bx = W*0.30;
-  const by = curveY(bx);
-  const r  = Math.max(18, Math.min(28, W*0.048));
+    #start-btn:active {
+      transform: translateX(-50%) scale(0.91);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12)
+    }
 
-  ctx.save();
-  ctx.translate(bx, by);
+    /* Settings toggle */
+    #settings-toggle {
+      position: absolute;
+      bottom: 22px;
+      right: 20px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.82);
+      border: none;
+      cursor: pointer;
+      font-size: 20px;
+      pointer-events: auto;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
-  // Quetsch
-  const sq = S.squish;
-  ctx.scale(2-sq, sq);
+    /* Settings panel */
+    #settings-panel {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(248, 253, 245, 0.97);
+      backdrop-filter: blur(14px);
+      border-radius: 26px 26px 0 0;
+      padding: 0 20px 30px;
+      transform: translateY(100%);
+      transition: transform .38s cubic-bezier(.4, 0, .2, 1);
+      max-height: 78vh;
+      overflow-y: auto;
+      pointer-events: auto;
+      box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.1);
+    }
 
-  // Schatten
-  ctx.shadowColor='rgba(0,0,0,0.22)';
-  ctx.shadowBlur=16;
-  ctx.shadowOffsetY=5;
+    #settings-panel.open {
+      transform: translateY(0)
+    }
 
-  // Kugelkörper
-  const g = ctx.createRadialGradient(-r*.35,-r*.35,r*.08,0,0,r);
-  g.addColorStop(0, shade(S.cBall,60));
-  g.addColorStop(.55, S.cBall);
-  g.addColorStop(1, shade(S.cBall,-40));
-  ctx.beginPath();
-  ctx.arc(0,0,r,0,Math.PI*2);
-  ctx.fillStyle=g;
-  ctx.fill();
-  ctx.shadowBlur=0; ctx.shadowOffsetY=0;
+    .handle {
+      width: 36px;
+      height: 4px;
+      background: #cde8c0;
+      border-radius: 2px;
+      margin: 14px auto 18px
+    }
 
-  // Glanzpunkt
-  ctx.beginPath();
-  ctx.arc(-r*.28,-r*.3,r*.22,0,Math.PI*2);
-  ctx.fillStyle='rgba(255,255,255,0.35)';
-  ctx.fill();
+    .sec-label {
+      font-size: 11px;
+      color: #8ab87a;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      margin-bottom: 9px;
+      font-weight: 600
+    }
 
-  // Rotationsmarker (2 Linien für Kugelmuster)
-  ctx.rotate(S.rot);
-  ctx.strokeStyle='rgba(255,255,255,0.65)';
-  ctx.lineWidth=2.2; ctx.lineCap='round';
-  ctx.beginPath(); ctx.moveTo(0,-r+4); ctx.lineTo(0,r-4); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(-r+4,0); ctx.lineTo(r-4,0); ctx.stroke();
+    .section {
+      margin-bottom: 20px
+    }
 
-  ctx.restore();
-}
+    .pill-row {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap
+    }
 
-function drawBreathText() {
-  const bx=W*0.30, by=curveY(bx);
-  const r=Math.max(18,Math.min(28,W*0.048));
-  const ph=currentPhase(S.bt);
-  const labels={inhale:'Einatmen',exhale:'Ausatmen',hold_top:'Halten',hold_bottom:'Halten'};
-  const txt=labels[ph]||'';
+    .pill {
+      padding: 7px 15px;
+      border-radius: 50px;
+      border: 2px solid #7ec850;
+      background: transparent;
+      color: #4a7a3a;
+      font-family: 'Quicksand', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all .2s;
+    }
 
-  // Text oben wenn Kugel unten, unten wenn Kugel oben
-  const ty = by < H*0.5 ? by+r+24 : by-r-20;
+    .pill.on {
+      background: #7ec850;
+      color: #fff;
+      border-color: #7ec850
+    }
 
-  ctx.save();
-  ctx.font='300 18px Quicksand';
-  ctx.textAlign='center';
-  ctx.textBaseline='top';
-  ctx.shadowColor='rgba(0,0,0,0.25)'; ctx.shadowBlur=8;
-  ctx.fillStyle='rgba(255,255,255,0.92)';
-  ctx.fillText(txt, bx, ty);
-  ctx.restore();
-}
+    .sl-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 9px
+    }
 
-function drawSun() {
-  const sx=W-62, sy=62, sr=34;
-  const angle=(S.sesTime/60)*Math.PI*2;
+    .sl-name {
+      font-size: 13px;
+      color: #5a7a4a;
+      width: 115px;
+      flex-shrink: 0
+    }
 
-  ctx.save(); ctx.translate(sx,sy); ctx.rotate(angle);
+    .sl-row input[type=range] {
+      flex: 1;
+      accent-color: #7ec850;
+      height: 4px
+    }
 
-  // Strahlen
-  for(let i=0;i<8;i++){
-    ctx.save(); ctx.rotate((i/8)*Math.PI*2);
-    ctx.beginPath();
-    if(ctx.roundRect) ctx.roundRect(sr+5,-3,13,6,3);
-    else ctx.rect(sr+5,-3,13,6);
-    ctx.fillStyle='#FFD700'; ctx.fill(); ctx.restore();
-  }
+    .sl-val {
+      font-size: 12px;
+      color: #7ec850;
+      width: 34px;
+      text-align: right;
+      font-weight: 600
+    }
 
-  // Sonnenkörper
-  const sg=ctx.createRadialGradient(-9,-9,4,0,0,sr);
-  sg.addColorStop(0,'#fffaaa'); sg.addColorStop(1,'#FFD700');
-  ctx.beginPath(); ctx.arc(0,0,sr,0,Math.PI*2);
-  ctx.fillStyle=sg; ctx.fill();
-  ctx.restore();
+    .color-grid {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap
+    }
 
-  // Countdown
-  const rem=Math.max(0,S.sesDur-S.sesTime);
-  const m=Math.floor(rem/60), sec=Math.floor(rem%60);
-  ctx.save(); ctx.translate(sx,sy);
-  ctx.font=`bold ${sr*.44}px monospace`;
-  ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.fillStyle='#7a5500';
-  ctx.fillText(`${m}:${sec.toString().padStart(2,'0')}`,0,0);
-  ctx.restore();
-}
+    .color-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 13px;
+      color: #5a7a4a
+    }
 
-// ─ Animationsloop ──────────────────────
-function loop(ts) {
-  requestAnimationFrame(loop);
-  let dt=0;
-  if(S.ts!==null) dt=Math.min((ts-S.ts)/1000,.05);
-  S.ts=ts;
+    .color-item input[type=color] {
+      width: 30px;
+      height: 30px;
+      border: 2px solid #d0e8c0;
+      border-radius: 50%;
+      padding: 0;
+      cursor: pointer;
+      background: none
+    }
 
-  if(S.running){
-    S.sesTime+=dt;
-    S.bt+=dt;
+    /* Completion */
+    #completion {
+      position: absolute;
+      inset: 0;
+      background: rgba(184, 212, 240, .95);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      pointer-events: auto;
+    }
 
-    const cd=S.phases.reduce((a,p)=>a+p.duration,0);
-    const spd=W/(2*cd);        // px/s
-    const r=Math.max(18,Math.min(28,W*0.048));
-    S.rot += spd*dt/r;         // Kugel rollt nach links → dreht sich
+    #completion.show {
+      display: flex
+    }
 
-    // Phasenwechsel erkennen → Quetschen + Atemzüge zählen
-   // Phasenwechsel erkennen → Quetschen + Atemzüge zählen + Audio
-    const cp = currentPhase(S.bt);
-    if (cp !== S.lastPhase) {
-      if (S.lastPhase !== null) {
-        if (cp === 'inhale' || cp === 'exhale') S.breaths += .5;
+    .card {
+      background: #fff;
+      border-radius: 28px;
+      padding: 32px 28px;
+      max-width: 330px;
+      width: 92%;
+      text-align: center;
+      box-shadow: 0 12px 50px rgba(0, 0, 0, 0.12);
+      animation: card-in .4s cubic-bezier(.175, .885, .32, 1.275);
+    }
+
+    @keyframes card-in {
+      from {
+        transform: scale(.85);
+        opacity: 0
       }
-      S.lastPhase = cp;
-      
-      // NEU: Audio für die neue Phase auslösen
-      AudioEngine.playPhase(cp); 
+
+      to {
+        transform: scale(1);
+        opacity: 1
+      }
     }
-S.squish=1;
-//   if(S.squishT>0){
-//S.squishT-=dt;
-//const t=1-S.squishT/.22;
-//S.squish=1-.14*Math.sin(t*Math.PI);
-//} else S.squish=1;
 
-    if(S.sesTime>=S.sesDur){ S.running=false; endSession(); }
-  }
+    .card-icon {
+      font-size: 52px;
+      margin-bottom: 10px
+    }
 
-  // Render
-  ctx.save();
-  ctx.scale(DPR,DPR);
-  drawBg();
-  drawHills();
-  drawCurve();
-  drawBall();
-  drawBreathText();
-  drawSun();
-  ctx.restore();
-}
+    .card h2 {
+      font-size: 22px;
+      color: #3a6a2a;
+      margin-bottom: 6px
+    }
 
-// ─ Resize ──────────────────────────────
-function resize(){
-  DPR=window.devicePixelRatio||1;
-  W=window.innerWidth; H=window.innerHeight;
-  canvas.width=W*DPR; canvas.height=H*DPR;
-  canvas.style.width=W+'px'; canvas.style.height=H+'px';
-}
-resize();
-window.addEventListener('resize',resize);
+    .card-stat {
+      font-size: 14px;
+      color: #8a9a80;
+      margin: 3px 0
+    }
 
-// ─ Start/Pause ─────────────────────────
-const btnStart=document.getElementById('start-btn');
-btnStart.addEventListener('click',()=>{
-	AudioEngine.init();
-  if(S.sesTime>=S.sesDur){
-    S.sesTime=0; S.bt=0; S.breaths=0; S.lastPhase=null;
-  }
-  S.running=!S.running;
-  btnStart.textContent=S.running?'⏸':'▶';
-});
+    .card-week {
+      margin: 16px 0;
+      padding: 13px;
+      background: #f2fae8;
+      border-radius: 14px;
+      font-size: 14px;
+      color: #4a7a3a
+    }
 
-// ─ Session Ende ────────────────────────
-function endSession(){
-  btnStart.textContent='▶';
-  const sessions=loadSessions();
-  sessions.push({
-    date: new Date().toISOString().split('T')[0],
-    duration: Math.round(S.sesDur),
-    pattern: activePresetLabel()
-  });
-  saveSessions(sessions);
-  updateWeekBar();
+    .card-dots {
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+      margin-top: 8px
+    }
 
-  const m=Math.floor(S.sesDur/60);
-  document.getElementById('cd-dur').textContent=`Dauer: ${m} Minuten`;
-  document.getElementById('cd-pat').textContent=`Technik: ${activePresetLabel()}`;
-  document.getElementById('cd-br').textContent=`≈ ${Math.round(S.breaths)} Atemzüge`;
+    .card-dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: #d0e8c0
+    }
 
-  const wc=weekCount(sessions);
-  const wg=parseInt(document.getElementById('p-wg').value);
-  document.getElementById('cd-week').innerHTML=`
+    .card-dot.on {
+      background: #7ec850
+    }
+
+    .card-btn {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      border-radius: 50px;
+      border: none;
+      cursor: pointer;
+      font-family: 'Quicksand', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      margin-top: 9px;
+      transition: opacity .2s;
+    }
+
+    .card-btn:active {
+      opacity: .8
+    }
+
+    .card-btn.primary {
+      background: #7ec850;
+      color: #fff
+    }
+
+    .card-btn.secondary {
+      background: #f0f5ec;
+      color: #6a8a5a
+    }
+
+    /* History */
+    #history {
+      position: absolute;
+      inset: 0;
+      background: rgba(184, 212, 240, .97);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      pointer-events: auto;
+    }
+
+    #history.show {
+      display: flex
+    }
+
+    /* Congrats toast */
+    #congrats {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      background: #fff;
+      border-radius: 22px;
+      padding: 24px 30px;
+      text-align: center;
+      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.15);
+      transition: transform .4s cubic-bezier(.175, .885, .32, 1.275);
+      pointer-events: auto;
+      z-index: 200;
+      min-width: 230px;
+    }
+
+    #congrats.show {
+      transform: translate(-50%, -50%) scale(1)
+    }
+
+    #congrats h3 {
+      font-size: 19px;
+      color: #3a7a2a;
+      margin-bottom: 5px
+    }
+
+    #congrats p {
+      font-size: 14px;
+      color: #8aaa7a
+    }
+
+    .congrats-close {
+      margin-top: 14px;
+      padding: 9px 22px;
+      border-radius: 50px;
+      border: none;
+      background: #7ec850;
+      color: #fff;
+      font-family: 'Quicksand', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* Confetti */
+    #confetti {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 300
+    }
+
+    .cp {
+      position: absolute;
+      top: -10px;
+      animation: fall linear forwards;
+    }
+
+    @keyframes fall {
+      to {
+        transform: translateY(110vh) rotate(720deg);
+        opacity: 0
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="c"></canvas>
+  <div id="ui">
+    <div id="week-bar">
+      <div class="week-top">🌱 <span id="wc">0</span>/<span id="wg">5</span> diese Woche</div>
+      <div class="dots" id="wdots"></div>
+    </div>
+
+    <button id="start-btn">▶</button>
+    <button id="settings-toggle">⚙️</button>
+    <button id="sound-btn">🔊</button>
+
+    <div id="settings-panel">
+      <div class="handle"></div>
+      <div class="section">
+        <div class="sec-label">Atemtechnik</div>
+        <div class="pill-row" id="presets"></div>
+      </div>
+      <div class="section" id="custom-box" style="display:none">
+        <div class="sec-label">Eigene Phasen (Sek.)</div>
+        <div class="sl-row"><span class="sl-name">Einatmen</span><input type="range" id="p-in" min="2" max="12"
+            step=".5" value="4"><span class="sl-val" id="v-in">4</span></div>
+        <div class="sl-row"><span class="sl-name">Plateau oben</span><input type="range" id="p-ht" min="0" max="8"
+            step=".5" value="0"><span class="sl-val" id="v-ht">0</span></div>
+        <div class="sl-row"><span class="sl-name">Ausatmen</span><input type="range" id="p-ex" min="2" max="12"
+            step=".5" value="6"><span class="sl-val" id="v-ex">6</span></div>
+        <div class="sl-row"><span class="sl-name">Plateau unten</span><input type="range" id="p-hb" min="0" max="8"
+            step=".5" value="0"><span class="sl-val" id="v-hb">0</span></div>
+      </div>
+
+      <div class="section">
+        <div class="sec-label">Klangart</div>
+        <div class="pill-row" id="sound-type-toggle">
+          <button class="pill on" data-val="cello">Cello</button>
+          <button class="pill" data-val="bowl">Klangschale</button>
+        </div>
+        <div class="sl-row" style="margin-top: 12px">
+          <span class="sl-name">Schalen-Pitch</span>
+          <input type="range" id="p-bowl-pitch" min="-12" max="12" step="0.1" value="0">
+          <span class="sl-val" id="v-bowl-pitch">0.0</span>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="sec-label">Session-Dauer</div>
+        <div class="pill-row" id="durations"></div>
+      </div>
+      <div class="section">
+        <div class="sec-label">Klangfarbe (Transposition)</div>
+        <div class="sl-row">
+          <span class="sl-name">Tonhöhe</span>
+          <input type="range" id="p-pitch" min="-12" max="12" step="1" value="0">
+          <span class="sl-val" id="v-pitch">0</span>
+        </div>
+        <div class="section">
+          <div class="sec-label">Haltephasen (Plateaus)</div>
+          <div class="pill-row" id="drone-toggle">
+            <button class="pill on" data-val="0">Stille</button>
+            <button class="pill" data-val="1">Brummen</button>
+          </div>
+        </div>
+        <div class="section">
+          <div class="sec-label">Ton am Hochpunkt</div>
+          <div class="pill-row" id="ping-toggle">
+            <button class="pill on" data-val="0">Aus</button>
+            <button class="pill" data-val="1">Ein</button>
+          </div>
+          <div class="sl-row" style="margin-top: 12px">
+            <span class="sl-name">Ping-Höhe</span>
+            <input type="range" id="p-ping-pitch" min="-24" max="24" step="1" value="0">
+            <span class="sl-val" id="v-ping-pitch">0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="sec-label">Amplitude (Wellenhöhe)</div>
+        <div class="sl-row"><span class="sl-name">Höhe</span><input type="range" id="p-amp" min="15" max="58" step="1"
+            value="38"><span class="sl-val" id="v-amp">38%</span></div>
+      </div>
+      <div class="section">
+        <div class="sec-label">Wochenziel</div>
+        <div class="sl-row"><span class="sl-name">Sessions/Woche</span><input type="range" id="p-wg" min="1" max="14"
+            step="1" value="5"><span class="sl-val" id="v-wg">5</span></div>
+      </div>
+      <div class="section">
+        <div class="sec-label">Farben</div>
+        <div class="color-grid">
+          <div class="color-item"><input type="color" id="c-ball" value="#ff6b35"><span>Kugel</span></div>
+          <div class="color-item"><input type="color" id="c-line" value="#ffffff"><span>Linie</span></div>
+          <div class="color-item"><input type="color" id="c-hill" value="#7ec850"><span>Hügel</span></div>
+          <div class="color-item"><input type="color" id="c-sky" value="#a8c8e8"><span>Himmel</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="completion">
+      <div class="card">
+        <div class="card-icon">🌿</div>
+        <h2>Session abgeschlossen</h2>
+        <p class="card-stat" id="cd-dur"></p>
+        <p class="card-stat" id="cd-pat"></p>
+        <p class="card-stat" id="cd-br"></p>
+        <div class="card-week" id="cd-week"></div>
+        <button class="card-btn primary" id="btn-new">Neue Session</button>
+        <button class="card-btn secondary" id="btn-hist">Verlauf ansehen</button>
+      </div>
+    </div>
+
+    <div id="history">
+      <div class="card" style="max-width:340px">
+        <h2 style="font-size:18px;color:#3a6a2a;margin-bottom:16px">Letzte 4 Wochen</h2>
+        <canvas id="hc" width="280" height="150" style="border-radius:8px"></canvas>
+        <button class="card-btn secondary" id="btn-close-hist" style="margin-top:14px">Zurück</button>
+      </div>
+    </div>
+
+    <div id="congrats">
+      <h3>✨ Wochenziel erreicht!</h3>
+      <p>Du bist großartig.</p>
+      <button class="congrats-close" id="btn-congrats">Super! 🎉</button>
+    </div>
+  </div>
+
+  <div id="confetti"></div>
+
+  <script>
+    // ═══════════════════════════════════════
+    //  EVA – Resonanzatmungs-App
+    // ═══════════════════════════════════════
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+    let W, H, DPR;
+
+
+    // ─ Zustand ─────────────────────────────
+    const S = {
+      running: false,
+      sesTime: 0,
+      sesDur: 600,
+      bt: 0,
+      rot: 0,
+      squish: 1,
+      squishT: 0,
+      lastPhase: null,
+      breaths: 0,
+      ts: null,
+      pitchShift: 0,
+      soundType: 'cello', // NEU: 'cello' oder 'bowl'
+      drone: false, // NEU: Steuert das Grundbrummen (Standard: aus)
+      ping: false,  // NEU: Triangel-Ping am Hochpunkt
+      pingPitch: 0, // NEU: Tonhöhe für den Ping
+      bowlPitch: 0, // NEU: Feintuning für die Klangschale
+      phases: [{ phase: 'inhale', duration: 4 }, { phase: 'exhale', duration: 6 }],
+      amp: 0.38,
+      cBall: '#ff6b35',
+      cLine: '#ffffff',
+      cHill: '#7ec850',
+      cSky: '#a8c8e8',
+    };
+
+    // ═══════════════════════════════════════
+    //  AUDIO – Cello-Synthese (Phasenbasiert)
+    // ═══════════════════════════════════════
+    const Audio = {
+      ctx: null,
+      masterGain: null,
+      breathGain: null,
+      initialized: false,
+      active: false,
+      oscillators: [], // NEU: Speichert alle Obertöne für den Tonwechsel
+      currentFreq: 0,  // Merkt sich die aktuelle Frequenz
+
+      init() {
+        if (this.initialized) return;
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        this.build();
+        this.initialized = true;
+      },
+
+      build() {
+        const ctx = this.ctx;
+        this.oscillators = []; // Reset
+
+        this.masterGain = ctx.createGain();
+        this.masterGain.gain.value = 0.6;
+        this.masterGain.connect(ctx.destination);
+
+        this.breathGain = ctx.createGain();
+        this.breathGain.gain.value = 0;
+        this.breathGain.connect(this.masterGain);
+
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = 1200;
+        filter.Q.value = 0.8;
+        filter.connect(this.breathGain);
+
+        // Obertöne Definition
+        const harmonics = [
+          [1, 0.55], [2, 0.42], [3, 0.28], [4, 0.18],
+          [5, 0.12], [6, 0.08], [7, 0.05], [8, 0.03],
+        ];
+
+        const vibrato = ctx.createOscillator();
+        vibrato.frequency.value = 4.8;
+        vibrato.type = 'sine';
+        vibrato.start();
+
+        const vibratoDepth = ctx.createGain();
+        vibratoDepth.gain.value = 2.8;
+        vibrato.connect(vibratoDepth);
+
+        // Initialisierung ohne feste Frequenz (wird in update gesetzt)
+        harmonics.forEach(([mult, amp]) => {
+          const osc = ctx.createOscillator();
+          osc.type = mult === 1 ? 'sawtooth' : 'sine';
+
+          if (mult <= 2) vibratoDepth.connect(osc.frequency);
+
+          const oscGain = ctx.createGain();
+          oscGain.gain.value = amp;
+          osc.connect(oscGain);
+          oscGain.connect(filter);
+          osc.start();
+
+          // NEU: Oszillator-Referenz speichern
+          this.oscillators.push({ osc, mult });
+        });
+
+        // Bogen-Rauschen
+        const bufferSize = ctx.sampleRate * 2;
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = (Math.random() * 2 - 1);
+        }
+        const noise = ctx.createBufferSource();
+        noise.buffer = buffer;
+        noise.loop = true;
+        noise.start();
+
+        const noiseFilter = ctx.createBiquadFilter();
+        noiseFilter.type = 'bandpass';
+        noiseFilter.frequency.value = 900;
+        noiseFilter.Q.value = 0.5;
+
+        const noiseGain = ctx.createGain();
+        noiseGain.gain.value = 0.035;
+
+        noise.connect(noiseFilter);
+        noiseFilter.connect(noiseGain);
+        noiseGain.connect(filter);
+      },
+
+      // NEU: Nimmt jetzt Lautstärke UND Ziel-Frequenz an
+      update(vol, targetFreq) {
+        if (!this.initialized || !this.active) return;
+
+        // 1. Lautstärke anpassen
+        this.breathGain.gain.setTargetAtTime(vol, this.ctx.currentTime, 0.08);
+
+        // 2. Tonhöhe anpassen (Glissando-Effekt)
+        if (Math.abs(this.currentFreq - targetFreq) > 0.1) {
+          this.currentFreq = targetFreq;
+          this.oscillators.forEach(item => {
+            // Zeitkonstante 0.35s simuliert das sanfte Greifen auf dem Cello
+            item.osc.frequency.setTargetAtTime(targetFreq * item.mult, this.ctx.currentTime, 0.35);
+          });
+        }
+      },
+
+      setActive(on) {
+        if (on && !this.initialized) this.init();
+        this.active = on;
+        if (!on && this.initialized) {
+          this.breathGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.1);
+        }
+      },
+
+      setVolume(v) {
+        if (this.initialized) this.masterGain.gain.setTargetAtTime(v, this.ctx.currentTime, 0.05);
+      },
+
+      playBowl() {
+        if (!this.initialized || !this.active) return;
+        const ctx = this.ctx;
+
+        // Healing frequency + Tuning
+        const baseFreq = 174 * Math.pow(2, S.bowlPitch / 12);
+
+        // Characteristic overtones for a singing bowl
+        const partials = [
+          // Fundament: schwingt extrem lange nach, reiner, starrer Ton ohne Absinken am Anfang
+          { mult: 1.0, amp: 1.0, decay: 34, pitchDrift: 0.0, attack: 0.06 },
+          // Körper: wärmt den Klang auf
+          { mult: 2.76, amp: 0.6, decay: 22, pitchDrift: -1.5, attack: 0.04 },
+          // Bloom-Oberton: schwillt erst im Ausklang stark an und zieht nach oben!
+          { mult: 5.4, amp: 0.55, decay: 18, pitchDrift: 4.5, attack: 4.5 },
+          // Starker metallischer Anschlag (harter Clack)
+          { mult: 8.93, amp: 0.5, decay: 7, pitchDrift: -2.0, attack: 0.02 },
+          // Hohes Zing
+          { mult: 14.34, amp: 0.25, decay: 3, pitchDrift: -6.0, attack: 0.01 }
+        ];
+
+        const masterGain = ctx.createGain();
+        masterGain.gain.setValueAtTime(0, ctx.currentTime);
+        // Direkter, viel knackigerer Anschlag
+        masterGain.gain.linearRampToValueAtTime(1.1, ctx.currentTime + 0.02);
+        // Noch längeres, getragenes Ausklingen
+        masterGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 34);
+        masterGain.connect(this.masterGain);
+
+        partials.forEach(p => {
+          const osc = ctx.createOscillator();
+          osc.type = 'sine';
+
+          osc.frequency.setValueAtTime(baseFreq * p.mult, ctx.currentTime);
+          osc.frequency.linearRampToValueAtTime((baseFreq * p.mult) + p.pitchDrift, ctx.currentTime + p.decay);
+
+          // Schwebung (Beating)
+          const lfo = ctx.createOscillator();
+          lfo.type = 'sine';
+          lfo.frequency.setValueAtTime(0.5 + (Math.random() * 1.5), ctx.currentTime);
+
+          // Wenn es der Bloom-Oberton ist, wird die Schwebung nach dem Anschlag deutlich schneller
+          if (p.mult === 5.4) {
+            lfo.frequency.linearRampToValueAtTime(5.0, ctx.currentTime + p.decay);
+          }
+
+          const lfoGain = ctx.createGain();
+          lfoGain.gain.value = 1.0 + (p.mult * 0.25);
+          lfo.connect(lfoGain);
+          lfoGain.connect(osc.frequency);
+          lfo.start(ctx.currentTime);
+          lfo.stop(ctx.currentTime + p.decay + 1);
+
+          const gain = ctx.createGain();
+          gain.gain.setValueAtTime(0, ctx.currentTime);
+          // Individuelles Anschwellen (Bloom dauert 4.5s, Anschlag 0.02s)
+          gain.gain.linearRampToValueAtTime(p.amp, ctx.currentTime + p.attack);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + p.decay);
+
+          osc.connect(gain);
+          gain.connect(masterGain);
+
+          osc.start(ctx.currentTime);
+          osc.stop(ctx.currentTime + p.decay + 1);
+        });
+      },
+
+      playPing(pitchOffset = 0) {
+        if (!this.initialized || !this.active) return;
+        const ctx = this.ctx;
+
+        const baseFreq = 880; // A5
+        const targetFreq = baseFreq * Math.pow(2, pitchOffset / 12);
+
+        const osc = ctx.createOscillator();
+        osc.type = 'triangle';
+        osc.frequency.value = targetFreq;
+
+        const lfo = ctx.createOscillator();
+        lfo.type = 'sine';
+        lfo.frequency.value = 3.5;
+        const lfoGain = ctx.createGain();
+        lfoGain.gain.value = 6.0;
+        lfo.connect(lfoGain);
+        lfoGain.connect(osc.frequency);
+        lfo.start(ctx.currentTime);
+        lfo.stop(ctx.currentTime + 2.5);
+
+        const gainNode = ctx.createGain();
+        gainNode.gain.setValueAtTime(0, ctx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.35, ctx.currentTime + 0.04);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 2.5);
+
+        osc.connect(gainNode);
+        gainNode.connect(this.masterGain);
+
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 2.6);
+      }
+    };
+
+    // ─ Screen Wake Lock Management ──────────────────────
+    let wakeLock = null;
+
+    async function requestWakeLock() {
+      if ('wakeLock' in navigator) {
+        try {
+          wakeLock = await navigator.wakeLock.request('screen');
+          console.log('Wake Lock aktiv.');
+          wakeLock.addEventListener('release', () => console.log('Wake Lock OS-Release.'));
+        } catch (err) {
+          console.warn(`Wake Lock blockiert: ${err.message}`);
+        }
+      }
+    }
+
+    function releaseWakeLock() {
+      if (wakeLock !== null) {
+        wakeLock.release().then(() => wakeLock = null);
+      }
+    }
+
+    document.addEventListener('visibilitychange', async () => {
+      if (wakeLock !== null && document.visibilityState === 'visible' && S.running) {
+        await requestWakeLock();
+      }
+    });
+
+    // ─ Event Listener für Mute-Button ───────────────────
+    const btnSound = document.getElementById('sound-btn');
+    let isMuted = false;
+    btnSound.addEventListener('click', () => {
+      isMuted = !isMuted;
+      btnSound.textContent = isMuted ? '🔇' : '🔊';
+      if (Audio.initialized) Audio.setVolume(isMuted ? 0 : 0.6);
+    });
+
+    // ─ Easing ──────────────────────────────
+    const ease = t => (1 - Math.cos(t * Math.PI)) / 2;
+
+    // ─ Atemwert 0..1 ───────────────────────
+    function breathVal(t) {
+      const ph = S.phases;
+      const total = ph.reduce((a, p) => a + p.duration, 0);
+      t = ((t % total) + total) % total;
+      let e = 0;
+      for (const p of ph) {
+        if (t < e + p.duration) {
+          const lt = (t - e) / p.duration;
+          if (p.phase === 'inhale') return ease(lt);
+          if (p.phase === 'hold_top') return 1;
+          if (p.phase === 'exhale') return ease(1 - lt);
+          if (p.phase === 'hold_bottom') return 0;
+        }
+        e += p.duration;
+      }
+      return 0;
+    }
+
+    function currentPhase(t) {
+      const ph = S.phases;
+      const total = ph.reduce((a, p) => a + p.duration, 0);
+      t = ((t % total) + total) % total;
+      let e = 0;
+      for (const p of ph) { if (t < e + p.duration) return p.phase; e += p.duration; }
+      return 'inhale';
+    }
+
+    // ─ Y auf der Kurve ──────────────────────
+    function curveY(x) {
+      const cd = S.phases.reduce((a, p) => a + p.duration, 0);
+      const pps = W / (2 * cd);
+      const bx = W * 0.30;
+      const td = (x - bx) / pps;
+      const val = breathVal(S.bt + td);
+      const mid = H * 0.50;
+      return mid - (val - 0.5) * (S.amp * H);
+    }
+
+    // ─ Farb-Helfer ─────────────────────────
+    function shade(hex, n) {
+      const num = parseInt(hex.replace('#', ''), 16);
+      const r = Math.max(0, Math.min(255, (num >> 16) + n));
+      const g = Math.max(0, Math.min(255, ((num >> 8) & 255) + n));
+      const b = Math.max(0, Math.min(255, (num & 255) + n));
+      return '#' + ((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1);
+    }
+    function hexToRgba(hex, a) {
+      const num = parseInt(hex.replace('#', ''), 16);
+      return `rgba(${num >> 16},${(num >> 8) & 255},${num & 255},${a})`;
+    }
+
+    // ─ Zeichnen ─────────────────────────────
+    function drawBg() {
+      const grad = ctx.createLinearGradient(0, 0, 0, H);
+      grad.addColorStop(0, S.cSky);
+      grad.addColorStop(1, shade(S.cSky, 25));
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    function drawHills() {
+      ctx.beginPath();
+      ctx.moveTo(0, curveY(0));
+      for (let x = 0; x <= W; x += 3) ctx.lineTo(x, curveY(x));
+      ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath();
+
+      const g = ctx.createLinearGradient(0, H * 0.3, 0, H);
+      g.addColorStop(0, S.cHill);
+      g.addColorStop(0.5, shade(S.cHill, -18));
+      g.addColorStop(1, shade(S.cHill, -38));
+      ctx.fillStyle = g;
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(0, curveY(0));
+      for (let x = 0; x <= W; x += 3) ctx.lineTo(x, curveY(x));
+      ctx.strokeStyle = hexToRgba(shade(S.cHill, 40), .35);
+      ctx.lineWidth = 3;
+      ctx.shadowBlur = 0;
+      ctx.stroke();
+    }
+
+    function drawCurve() {
+      ctx.beginPath();
+      ctx.moveTo(0, curveY(0));
+      for (let x = 0; x <= W; x += 3) ctx.lineTo(x, curveY(x));
+      ctx.strokeStyle = S.cLine;
+      ctx.lineWidth = 3.5;
+      ctx.shadowColor = 'rgba(255,255,255,0.6)';
+      ctx.shadowBlur = 14;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+
+    function drawBall() {
+      const bx = W * 0.30;
+      const by = curveY(bx);
+      const r = Math.max(18, Math.min(28, W * 0.048));
+
+      ctx.save();
+      ctx.translate(bx, by);
+
+      const sq = S.squish;
+      ctx.scale(2 - sq, sq);
+
+      ctx.shadowColor = 'rgba(0,0,0,0.22)';
+      ctx.shadowBlur = 16;
+      ctx.shadowOffsetY = 5;
+
+      const g = ctx.createRadialGradient(-r * .35, -r * .35, r * .08, 0, 0, r);
+      g.addColorStop(0, shade(S.cBall, 60));
+      g.addColorStop(.55, S.cBall);
+      g.addColorStop(1, shade(S.cBall, -40));
+      ctx.beginPath();
+      ctx.arc(0, 0, r, 0, Math.PI * 2);
+      ctx.fillStyle = g;
+      ctx.fill();
+      ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+
+      ctx.beginPath();
+      ctx.arc(-r * .28, -r * .3, r * .22, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      ctx.fill();
+
+      ctx.rotate(S.rot);
+      ctx.strokeStyle = 'rgba(255,255,255,0.65)';
+      ctx.lineWidth = 2.2; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(0, -r + 4); ctx.lineTo(0, r - 4); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-r + 4, 0); ctx.lineTo(r - 4, 0); ctx.stroke();
+
+      ctx.restore();
+    }
+
+    function drawBreathText() {
+      const bx = W * 0.30, by = curveY(bx);
+      const r = Math.max(18, Math.min(28, W * 0.048));
+      const ph = currentPhase(S.bt);
+      const labels = { inhale: 'Einatmen', exhale: 'Ausatmen', hold_top: 'Halten', hold_bottom: 'Halten' };
+      const txt = labels[ph] || '';
+
+      const ty = by < H * 0.5 ? by + r + 24 : by - r - 20;
+
+      ctx.save();
+      ctx.font = '300 18px Quicksand';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.shadowColor = 'rgba(0,0,0,0.25)'; ctx.shadowBlur = 8;
+      ctx.fillStyle = 'rgba(255,255,255,0.92)';
+      ctx.fillText(txt, bx, ty);
+      ctx.restore();
+    }
+
+    function drawSun() {
+      const sx = W - 62, sy = 62, sr = 34;
+      const angle = (S.sesTime / 60) * Math.PI * 2;
+
+      ctx.save(); ctx.translate(sx, sy); ctx.rotate(angle);
+
+      for (let i = 0; i < 8; i++) {
+        ctx.save(); ctx.rotate((i / 8) * Math.PI * 2);
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(sr + 5, -3, 13, 6, 3);
+        else ctx.rect(sr + 5, -3, 13, 6);
+        ctx.fillStyle = '#FFD700'; ctx.fill(); ctx.restore();
+      }
+
+      const sg = ctx.createRadialGradient(-9, -9, 4, 0, 0, sr);
+      sg.addColorStop(0, '#fffaaa'); sg.addColorStop(1, '#FFD700');
+      ctx.beginPath(); ctx.arc(0, 0, sr, 0, Math.PI * 2);
+      ctx.fillStyle = sg; ctx.fill();
+      ctx.restore();
+
+      const rem = Math.max(0, S.sesDur - S.sesTime);
+      const m = Math.floor(rem / 60), sec = Math.floor(rem % 60);
+      ctx.save(); ctx.translate(sx, sy);
+      ctx.font = `bold ${sr * .44}px monospace`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#7a5500';
+      ctx.fillText(`${m}:${sec.toString().padStart(2, '0')}`, 0, 0);
+      ctx.restore();
+    }
+
+    // ─ Animationsloop ──────────────────────
+    function loop(ts) {
+      requestAnimationFrame(loop);
+      let dt = 0;
+      if (S.ts !== null) dt = Math.min((ts - S.ts) / 1000, .05);
+      S.ts = ts;
+
+      if (S.running) {
+        S.sesTime += dt;
+        S.bt += dt;
+
+        const ph = S.phases;
+        const total = ph.reduce((a, p) => a + p.duration, 0);
+        const spd = W / (2 * total);
+        const r = Math.max(18, Math.min(28, W * 0.048));
+        S.rot += spd * dt / r;
+
+        // 1. Aktuelle Phase und Fortschritt (0 bis 1) präzise ermitteln
+        const tMod = ((S.bt % total) + total) % total;
+        let e = 0, currentPhaseObj = ph[0], progress = 0;
+        for (const p of ph) {
+          if (tMod < e + p.duration) {
+            currentPhaseObj = p;
+            progress = (tMod - e) / p.duration;
+            break;
+          }
+          e += p.duration;
+        }
+
+        // Atemzüge zählen (Visuelle Logik)
+        if (currentPhaseObj.phase !== S.lastPhase) {
+          if (S.lastPhase !== null) {
+            if (currentPhaseObj.phase === 'inhale' || currentPhaseObj.phase === 'exhale') S.breaths += .5;
+
+            // Ping am Hochpunkt
+            if (S.ping && S.lastPhase === 'inhale' && (currentPhaseObj.phase === 'hold_top' || currentPhaseObj.phase === 'exhale')) {
+              Audio.playPing(S.pingPitch);
+            }
+          }
+
+          // Klangschale am Start des Zyklus (Einatmen beginnt)
+          if (S.soundType === 'bowl' && currentPhaseObj.phase === 'inhale') {
+            Audio.playBowl();
+          }
+
+          S.lastPhase = currentPhaseObj.phase;
+        }
+
+        if (S.sesTime >= S.sesDur) {
+          S.running = false;
+          endSession();
+        }
+
+        // ── NEUE AUDIO LOGIK ─────────────────────────────────
+        // A) Lautstärke-Bogen: Anschwellen und Abschwellen INNERHALB der Phase
+        let volSwell = 0;
+        if (currentPhaseObj.phase === 'inhale' || currentPhaseObj.phase === 'exhale') {
+          // Sinus-Funktion: Startet bei 0, Mitte ist 1, Ende ist 0
+          volSwell = Math.sin(progress * Math.PI);
+        } else {
+          // NEU: Haltephasen behandeln
+          if (S.drone) {
+            // Ein sehr leises, statisches Brummen (12% der Maximallautstärke)
+            volSwell = 0.12;
+          } else {
+            // Absolute Stille
+            volSwell = 0;
+          }
+        }
+        // B) Tonhöhe bestimmen (nach dem Wellenberg tiefer)
+        let baseFreq = 146.83; // D3 (Für Einatmen und unteres Plateau)
+        if (currentPhaseObj.phase === 'exhale' || currentPhaseObj.phase === 'hold_top') {
+          baseFreq = 97.99;    // G2 (Tieferer Ton nach dem oberen Scheitelpunkt)
+        }
+
+        // Benutzereinstellung (Pitch-Slider) anwenden
+        const shiftFactor = Math.pow(2, S.pitchShift / 12);
+        const targetFreq = baseFreq * shiftFactor;
+
+        // Cello mit den neuen Werten füttern
+        if (S.soundType === 'cello') {
+          Audio.update(volSwell, targetFreq);
+        } else {
+          Audio.update(0, targetFreq); // Stumm schalten
+        }
+      }
+
+      ctx.clearRect(0, 0, W, H);
+      drawBg();
+      drawSun();
+      drawHills();
+      drawCurve();
+      drawBall();
+      drawBreathText();
+    }
+
+    // ─ Resize ──────────────────────────────
+    function resize() {
+      DPR = window.devicePixelRatio || 1;
+      W = window.innerWidth; H = window.innerHeight;
+      canvas.width = W * DPR; canvas.height = H * DPR;
+      canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+      ctx.scale(DPR, DPR);
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+
+    // Drone-Toggle Buttons
+    const droneBtns = document.querySelectorAll('#drone-toggle .pill');
+    droneBtns.forEach((btn, i) => {
+      btn.addEventListener('click', () => {
+        // Visuelles Umschalten der Buttons
+        droneBtns.forEach(b => b.classList.remove('on'));
+        btn.classList.add('on');
+        // State aktualisieren (Index 0 = false/Stille, Index 1 = true/Brummen)
+        S.drone = (i === 1);
+      });
+    });
+
+    // Sound-Type-Toggle Buttons
+    const typeBtns = document.querySelectorAll('#sound-type-toggle .pill');
+    typeBtns.forEach((btn, i) => {
+      btn.addEventListener('click', () => {
+        typeBtns.forEach(b => b.classList.remove('on'));
+        btn.classList.add('on');
+        S.soundType = btn.dataset.val;
+      });
+    });
+
+    // Ping-Toggle Buttons
+    const pingBtns = document.querySelectorAll('#ping-toggle .pill');
+    pingBtns.forEach((btn, i) => {
+      btn.addEventListener('click', () => {
+        pingBtns.forEach(b => b.classList.remove('on'));
+        btn.classList.add('on');
+        S.ping = (i === 1);
+      });
+    });
+
+    document.getElementById('p-ping-pitch').addEventListener('input', e => {
+      S.pingPitch = parseInt(e.target.value);
+      const prefix = S.pingPitch > 0 ? '+' : '';
+      document.getElementById('v-ping-pitch').textContent = prefix + S.pingPitch;
+    });
+
+    document.getElementById('p-bowl-pitch').addEventListener('input', e => {
+      S.bowlPitch = parseFloat(e.target.value);
+      const prefix = S.bowlPitch > 0 ? '+' : '';
+      document.getElementById('v-bowl-pitch').textContent = prefix + S.bowlPitch.toFixed(1);
+    });
+
+    // ─ Start/Pause ─────────────────────────
+    const btnStart = document.getElementById('start-btn');
+    btnStart.addEventListener('click', () => {
+      if (S.sesTime >= S.sesDur) {
+        S.sesTime = 0; S.bt = 0; S.breaths = 0; S.lastPhase = null;
+      }
+
+      S.running = !S.running;
+      btnStart.textContent = S.running ? '⏸' : '▶';
+
+      Audio.setActive(S.running);
+
+      if (S.running) {
+        requestWakeLock();
+      } else {
+        releaseWakeLock();
+      }
+    });
+
+    // ─ Session Ende ────────────────────────
+    function endSession() {
+      btnStart.textContent = '▶';
+      releaseWakeLock();
+      const sessions = loadSessions();
+      sessions.push({
+        date: new Date().toISOString().split('T')[0],
+        duration: Math.round(S.sesDur),
+        pattern: activePresetLabel()
+      });
+      saveSessions(sessions);
+      updateWeekBar();
+
+      const m = Math.floor(S.sesDur / 60);
+      document.getElementById('cd-dur').textContent = `Dauer: ${m} Minuten`;
+      document.getElementById('cd-pat').textContent = `Technik: ${activePresetLabel()}`;
+      document.getElementById('cd-br').textContent = `≈ ${Math.round(S.breaths)} Atemzüge`;
+
+      const wc = weekCount(sessions);
+      const wg = parseInt(document.getElementById('p-wg').value);
+      document.getElementById('cd-week').innerHTML = `
     🌱 ${wc} von ${wg} Sessions diese Woche
     <div class="card-dots" style="margin-top:8px">
-      ${Array.from({length:Math.min(wg,12)},(_,i)=>`<div class="card-dot${i<wc?' on':''}"></div>`).join('')}
+      ${Array.from({ length: Math.min(wg, 12) }, (_, i) => `<div class="card-dot${i < wc ? ' on' : ''}"></div>`).join('')}
     </div>`;
 
-  document.getElementById('completion').classList.add('show');
-}
-
-document.getElementById('btn-new').addEventListener('click',()=>{
-  document.getElementById('completion').classList.remove('show');
-  S.sesTime=0; S.bt=0; S.breaths=0; S.lastPhase=null;
-  checkCongrats();
-});
-document.getElementById('btn-hist').addEventListener('click',()=>{
-  document.getElementById('completion').classList.remove('show');
-  showHistory();
-});
-document.getElementById('btn-close-hist').addEventListener('click',()=>{
-  document.getElementById('history').classList.remove('show');
-});
-
-// ─ Verlauf ─────────────────────────────
-function showHistory(){
-  document.getElementById('history').classList.add('show');
-  const hc=document.getElementById('hc');
-  const hx=hc.getContext('2d');
-  const HW=hc.width, HH=hc.height;
-  hx.clearRect(0,0,HW,HH);
-
-  const sessions=loadSessions();
-  const now=new Date();
-  const weeks=Array.from({length:4},(_,i)=>{
-    const d=new Date(now);
-    d.setDate(d.getDate()-i*7);
-    const ws=new Date(d);
-    ws.setDate(d.getDate()-d.getDay()+(d.getDay()===0?-6:1));
-    ws.setHours(0,0,0,0);
-    const we=new Date(ws); we.setDate(ws.getDate()+7);
-    const cnt=sessions.filter(s=>{const sd=new Date(s.date);return sd>=ws&&sd<we;}).length;
-    return{label:`KW${weekNum(d)}`,cnt};
-  }).reverse();
-
-  const mx=Math.max(...weeks.map(w=>w.cnt),5);
-  const bw=(HW-48)/4;
-  const mh=HH-36;
-
-  // Grid-Linie
-  hx.strokeStyle='#e8f4e0'; hx.lineWidth=1;
-  [.25,.5,.75,1].forEach(f=>{
-    hx.beginPath(); hx.moveTo(24,HH-20-mh*f); hx.lineTo(HW-24,HH-20-mh*f); hx.stroke();
-  });
-
-  weeks.forEach((w,i)=>{
-    const bh=(w.cnt/mx)*mh;
-    const x=24+i*bw+bw*.12;
-    const y=HH-20-bh;
-    hx.fillStyle=S.cHill;
-    if(hx.roundRect) hx.beginPath(),hx.roundRect(x,y,bw*.76,bh,5),hx.fill();
-    else{hx.beginPath();hx.rect(x,y,bw*.76,bh);hx.fill();}
-    hx.fillStyle='#5a8a4a';
-    hx.font='12px Quicksand'; hx.textAlign='center';
-    hx.fillText(w.label,x+bw*.38,HH-5);
-    if(w.cnt>0){
-      hx.font='bold 13px Quicksand';
-      hx.fillStyle='#3a6a2a';
-      hx.fillText(w.cnt,x+bw*.38,Math.max(y-5,12));
+      document.getElementById('completion').classList.add('show');
     }
-  });
-}
-function weekNum(d){
-  const dt=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
-  dt.setUTCDate(dt.getUTCDate()+4-(dt.getUTCDay()||7));
-  const ys=new Date(Date.UTC(dt.getUTCFullYear(),0,1));
-  return Math.ceil((((dt-ys)/86400000)+1)/7);
-}
 
-// ─ localStorage ─────────────────────────
-function loadSessions(){try{return JSON.parse(localStorage.getItem('eva_s')||'[]');}catch{return[];}}
-function saveSessions(s){localStorage.setItem('eva_s',JSON.stringify(s));}
-function weekCount(sessions){
-  const now=new Date();
-  const ws=new Date(now);
-  ws.setDate(now.getDate()-now.getDay()+(now.getDay()===0?-6:1));
-  ws.setHours(0,0,0,0);
-  return sessions.filter(s=>new Date(s.date)>=ws).length;
-}
-function updateWeekBar(){
-  const sessions=loadSessions();
-  const wc=weekCount(sessions);
-  const wg=parseInt(document.getElementById('p-wg').value);
-  document.getElementById('wc').textContent=wc;
-  document.getElementById('wg').textContent=wg;
-  const d=document.getElementById('wdots');
-  d.innerHTML=Array.from({length:Math.min(wg,10)},(_,i)=>
-    `<div class="dot${i<wc?' on':''}"></div>`).join('');
-}
+    document.getElementById('btn-new').addEventListener('click', () => {
+      document.getElementById('completion').classList.remove('show');
+      S.sesTime = 0; S.bt = 0; S.breaths = 0; S.lastPhase = null;
+      checkCongrats();
+    });
+    document.getElementById('btn-hist').addEventListener('click', () => {
+      document.getElementById('completion').classList.remove('show');
+      showHistory();
+    });
+    document.getElementById('btn-close-hist').addEventListener('click', () => {
+      document.getElementById('history').classList.remove('show');
+    });
 
-// ─ Glückwunsch ─────────────────────────
-function checkCongrats(){
-  const sessions=loadSessions();
-  const wc=weekCount(sessions);
-  const wg=parseInt(document.getElementById('p-wg').value);
-  const key='eva_cg_'+new Date().getFullYear()+'_'+weekNum(new Date());
-  if(wc>=wg&&!localStorage.getItem(key)){
-    localStorage.setItem(key,'1');
-    setTimeout(()=>{
-      spawnConfetti();
-      document.getElementById('congrats').classList.add('show');
-    },300);
-  }
-}
-document.getElementById('btn-congrats').addEventListener('click',()=>{
-  document.getElementById('congrats').classList.remove('show');
-});
+    // ─ Verlauf ─────────────────────────────
+    function showHistory() {
+      document.getElementById('history').classList.add('show');
+      const hc = document.getElementById('hc');
+      const hx = hc.getContext('2d');
+      const HW = hc.width, HH = hc.height;
+      hx.clearRect(0, 0, HW, HH);
 
-function spawnConfetti(){
-  const el=document.getElementById('confetti');
-  const cols=['#ff6b35','#7ec850','#FFD700','#4a9e2f','#ff9a4a','#a8c8e8','#ff8c69'];
-  for(let i=0;i<40;i++){
-    const p=document.createElement('div');
-    p.className='cp';
-    const sz=5+Math.random()*9;
-    p.style.cssText=`
-      left:${Math.random()*100}%;
+      const sessions = loadSessions();
+      const now = new Date();
+      const weeks = Array.from({ length: 4 }, (_, i) => {
+        const d = new Date(now);
+        d.setDate(d.getDate() - i * 7);
+        const ws = new Date(d);
+        ws.setDate(d.getDate() - d.getDay() + (d.getDay() === 0 ? -6 : 1));
+        ws.setHours(0, 0, 0, 0);
+        const we = new Date(ws); we.setDate(ws.getDate() + 7);
+        const cnt = sessions.filter(s => { const sd = new Date(s.date); return sd >= ws && sd < we; }).length;
+        return { label: `KW${weekNum(d)}`, cnt };
+      }).reverse();
+
+      const mx = Math.max(...weeks.map(w => w.cnt), 5);
+      const bw = (HW - 48) / 4;
+      const mh = HH - 36;
+
+      hx.strokeStyle = '#e8f4e0'; hx.lineWidth = 1;
+      [.25, .5, .75, 1].forEach(f => {
+        hx.beginPath(); hx.moveTo(24, HH - 20 - mh * f); hx.lineTo(HW - 24, HH - 20 - mh * f); hx.stroke();
+      });
+
+      weeks.forEach((w, i) => {
+        const bh = (w.cnt / mx) * mh;
+        const x = 24 + i * bw + bw * .12;
+        const y = HH - 20 - bh;
+        hx.fillStyle = S.cHill;
+        if (hx.roundRect) hx.beginPath(), hx.roundRect(x, y, bw * .76, bh, 5), hx.fill();
+        else { hx.beginPath(); hx.rect(x, y, bw * .76, bh); hx.fill(); }
+        hx.fillStyle = '#5a8a4a';
+        hx.font = '12px Quicksand'; hx.textAlign = 'center';
+        hx.fillText(w.label, x + bw * .38, HH - 5);
+        if (w.cnt > 0) {
+          hx.font = 'bold 13px Quicksand';
+          hx.fillStyle = '#3a6a2a';
+          hx.fillText(w.cnt, x + bw * .38, Math.max(y - 5, 12));
+        }
+      });
+    }
+    function weekNum(d) {
+      const dt = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+      dt.setUTCDate(dt.getUTCDate() + 4 - (dt.getUTCDay() || 7));
+      const ys = new Date(Date.UTC(dt.getUTCFullYear(), 0, 1));
+      return Math.ceil((((dt - ys) / 86400000) + 1) / 7);
+    }
+
+    // ─ localStorage ─────────────────────────
+    function loadSessions() { try { return JSON.parse(localStorage.getItem('eva_s') || '[]'); } catch { return []; } }
+    function saveSessions(s) { localStorage.setItem('eva_s', JSON.stringify(s)); }
+    function weekCount(sessions) {
+      const now = new Date();
+      const ws = new Date(now);
+      ws.setDate(now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1));
+      ws.setHours(0, 0, 0, 0);
+      return sessions.filter(s => new Date(s.date) >= ws).length;
+    }
+    function updateWeekBar() {
+      const sessions = loadSessions();
+      const wc = weekCount(sessions);
+      const wg = parseInt(document.getElementById('p-wg').value);
+      document.getElementById('wc').textContent = wc;
+      document.getElementById('wg').textContent = wg;
+      const d = document.getElementById('wdots');
+      d.innerHTML = Array.from({ length: Math.min(wg, 10) }, (_, i) =>
+        `<div class="dot${i < wc ? ' on' : ''}"></div>`).join('');
+    }
+
+    // ─ Glückwunsch ─────────────────────────
+    function checkCongrats() {
+      const sessions = loadSessions();
+      const wc = weekCount(sessions);
+      const wg = parseInt(document.getElementById('p-wg').value);
+      const key = 'eva_cg_' + new Date().getFullYear() + '_' + weekNum(new Date());
+      if (wc >= wg && !localStorage.getItem(key)) {
+        localStorage.setItem(key, '1');
+        setTimeout(() => {
+          spawnConfetti();
+          document.getElementById('congrats').classList.add('show');
+        }, 300);
+      }
+    }
+    document.getElementById('btn-congrats').addEventListener('click', () => {
+      document.getElementById('congrats').classList.remove('show');
+    });
+
+    function spawnConfetti() {
+      const el = document.getElementById('confetti');
+      const cols = ['#ff6b35', '#7ec850', '#FFD700', '#4a9e2f', '#ff9a4a', '#a8c8e8', '#ff8c69'];
+      for (let i = 0; i < 40; i++) {
+        const p = document.createElement('div');
+        p.className = 'cp';
+        const sz = 5 + Math.random() * 9;
+        p.style.cssText = `
+      left:${Math.random() * 100}%;
       width:${sz}px;height:${sz}px;
-      background:${cols[Math.floor(Math.random()*cols.length)]};
-      border-radius:${Math.random()>.5?'50%':'3px'};
-      animation:fall ${2+Math.random()*2}s ${Math.random()*.8}s linear forwards;
+      background:${cols[Math.floor(Math.random() * cols.length)]};
+      border-radius:${Math.random() > .5 ? '50%' : '3px'};
+      animation:fall ${2 + Math.random() * 2}s ${Math.random() * .8}s linear forwards;
       opacity:1;
     `;
-    el.appendChild(p);
-    setTimeout(()=>p.remove(),4000);
-  }
-}
+        el.appendChild(p);
+        setTimeout(() => p.remove(), 4000);
+      }
+    }
 
-// ─ Settings ────────────────────────────
-const PRESETS=[
-  {label:'4–6', phases:[{phase:'inhale',duration:4},{phase:'exhale',duration:6}]},
-  {label:'4–7–8', phases:[{phase:'inhale',duration:4},{phase:'hold_top',duration:7},{phase:'exhale',duration:8}]},
-  {label:'Box', phases:[{phase:'inhale',duration:4},{phase:'hold_top',duration:4},{phase:'exhale',duration:4},{phase:'hold_bottom',duration:4}]},
-  {label:'Eigene', phases:null}
-];
-const DURS=[5,10,15,20];
-let activeP=0, activeD=1;
+    // ─ Settings ────────────────────────────
+    const PRESETS = [
+      { label: '4–6', phases: [{ phase: 'inhale', duration: 4 }, { phase: 'exhale', duration: 6 }] },
+      { label: '4–7–8', phases: [{ phase: 'inhale', duration: 4 }, { phase: 'hold_top', duration: 7 }, { phase: 'exhale', duration: 8 }] },
+      { label: 'Box', phases: [{ phase: 'inhale', duration: 4 }, { phase: 'hold_top', duration: 4 }, { phase: 'exhale', duration: 4 }, { phase: 'hold_bottom', duration: 4 }] },
+      { label: 'Eigene', phases: null }
+    ];
+    const DURS = [5, 10, 15, 20];
+    let activeP = 0, activeD = 1;
 
-function activePresetLabel(){return PRESETS[activeP]?.label||'Eigene';}
+    function activePresetLabel() { return PRESETS[activeP]?.label || 'Eigene'; }
 
-// Preset-Buttons
-const pr=document.getElementById('presets');
-PRESETS.forEach((p,i)=>{
-  const b=document.createElement('button');
-  b.className='pill'+(i===0?' on':'');
-  b.textContent=p.label;
-  b.addEventListener('click',()=>{
-    activeP=i;
-    pr.querySelectorAll('.pill').forEach((x,j)=>x.classList.toggle('on',j===i));
-    if(p.phases){S.phases=JSON.parse(JSON.stringify(p.phases));document.getElementById('custom-box').style.display='none';}
-    else{document.getElementById('custom-box').style.display='block';applyCustom();}
-  });
-  pr.appendChild(b);
-});
-
-// Dauer-Buttons
-const dr=document.getElementById('durations');
-DURS.forEach((d,i)=>{
-  const b=document.createElement('button');
-  b.className='pill'+(i===1?' on':'');
-  b.textContent=d+' min';
-  b.addEventListener('click',()=>{
-    activeD=i;
-    dr.querySelectorAll('.pill').forEach((x,j)=>x.classList.toggle('on',j===i));
-    S.sesDur=d*60; S.sesTime=0; S.running=false; btnStart.textContent='▶';
-  });
-  dr.appendChild(b);
-});
-
-// Custom-Slider
-function applyCustom(){
-  const i=parseFloat(document.getElementById('p-in').value);
-  const ht=parseFloat(document.getElementById('p-ht').value);
-  const e=parseFloat(document.getElementById('p-ex').value);
-  const hb=parseFloat(document.getElementById('p-hb').value);
-  const ph=[{phase:'inhale',duration:i}];
-  if(ht>0)ph.push({phase:'hold_top',duration:ht});
-  ph.push({phase:'exhale',duration:e});
-  if(hb>0)ph.push({phase:'hold_bottom',duration:hb});
-  S.phases=ph;
-}
-[['p-in','v-in'],['p-ht','v-ht'],['p-ex','v-ex'],['p-hb','v-hb']].forEach(([sid,vid])=>{
-  document.getElementById(sid).addEventListener('input',e=>{
-    document.getElementById(vid).textContent=e.target.value;
-    if(activeP===3)applyCustom();
-  });
-});
-document.getElementById('p-amp').addEventListener('input',e=>{
-  S.amp=parseInt(e.target.value)/100;
-  document.getElementById('v-amp').textContent=e.target.value+'%';
-});
-document.getElementById('p-wg').addEventListener('input',e=>{
-  document.getElementById('v-wg').textContent=e.target.value;
-  updateWeekBar();
-});
-document.getElementById('c-ball').addEventListener('input',e=>S.cBall=e.target.value);
-document.getElementById('c-line').addEventListener('input',e=>S.cLine=e.target.value);
-document.getElementById('c-hill').addEventListener('input',e=>S.cHill=e.target.value);
-document.getElementById('c-sky').addEventListener('input',e=>S.cSky=e.target.value);
-document.getElementById('p-pitch').addEventListener('input', e => {
-  S.pitchShift = parseInt(e.target.value);
-  const prefix = S.pitchShift > 0 ? '+' : '';
-  document.getElementById('v-pitch').textContent = prefix + S.pitchShift;
-});
-
-// Settings toggle
-document.getElementById('settings-toggle').addEventListener('click',()=>{
-  document.getElementById('settings-panel').classList.toggle('open');
-});
-
-// Panel schließen bei Tap außen
-document.getElementById('ui').addEventListener('click',e=>{
-  const panel=document.getElementById('settings-panel');
-  if(panel.classList.contains('open')&&!panel.contains(e.target)&&e.target!==document.getElementById('settings-toggle')){
-    panel.classList.remove('open');
-  }
-});
-
-// ─ Init ────────────────────────────────
-updateWeekBar();
-// Glückwunsch beim Start prüfen (wenn Wochenziel bereits erreicht)
-setTimeout(()=>{
-  const sessions=loadSessions();
-  const wc=weekCount(sessions);
-  const wg=parseInt(document.getElementById('p-wg').value);
-  const key='eva_cg_'+new Date().getFullYear()+'_'+weekNum(new Date());
-  if(wc>=wg&&!localStorage.getItem(key)){
-    localStorage.setItem(key,'1');
-    spawnConfetti();
-    document.getElementById('congrats').classList.add('show');
-  }
-},800);
-
-requestAnimationFrame(loop);
-</script>
-<script>
-// Service Worker registrieren
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
-      .then(registration => {
-        console.log('ServiceWorker registriert mit Scope:', registration.scope);
-      })
-      .catch(error => {
-        console.log('ServiceWorker Registrierung fehlgeschlagen:', error);
+    const pr = document.getElementById('presets');
+    PRESETS.forEach((p, i) => {
+      const b = document.createElement('button');
+      b.className = 'pill' + (i === 0 ? ' on' : '');
+      b.textContent = p.label;
+      b.addEventListener('click', () => {
+        activeP = i;
+        pr.querySelectorAll('.pill').forEach((x, j) => x.classList.toggle('on', j === i));
+        if (p.phases) { S.phases = JSON.parse(JSON.stringify(p.phases)); document.getElementById('custom-box').style.display = 'none'; }
+        else { document.getElementById('custom-box').style.display = 'block'; applyCustom(); }
       });
-  });
-}
-</script>
+      pr.appendChild(b);
+    });
+
+    const dr = document.getElementById('durations');
+    DURS.forEach((d, i) => {
+      const b = document.createElement('button');
+      b.className = 'pill' + (i === 1 ? ' on' : '');
+      b.textContent = d + ' min';
+      b.addEventListener('click', () => {
+        activeD = i;
+        dr.querySelectorAll('.pill').forEach((x, j) => x.classList.toggle('on', j === i));
+        S.sesDur = d * 60; S.sesTime = 0; S.running = false; btnStart.textContent = '▶';
+      });
+      dr.appendChild(b);
+    });
+
+    function applyCustom() {
+      const i = parseFloat(document.getElementById('p-in').value);
+      const ht = parseFloat(document.getElementById('p-ht').value);
+      const e = parseFloat(document.getElementById('p-ex').value);
+      const hb = parseFloat(document.getElementById('p-hb').value);
+      const ph = [{ phase: 'inhale', duration: i }];
+      if (ht > 0) ph.push({ phase: 'hold_top', duration: ht });
+      ph.push({ phase: 'exhale', duration: e });
+      if (hb > 0) ph.push({ phase: 'hold_bottom', duration: hb });
+      S.phases = ph;
+    }
+    [['p-in', 'v-in'], ['p-ht', 'v-ht'], ['p-ex', 'v-ex'], ['p-hb', 'v-hb']].forEach(([sid, vid]) => {
+      document.getElementById(sid).addEventListener('input', e => {
+        document.getElementById(vid).textContent = e.target.value;
+        if (activeP === 3) applyCustom();
+      });
+    });
+    document.getElementById('p-amp').addEventListener('input', e => {
+      S.amp = parseInt(e.target.value) / 100;
+      document.getElementById('v-amp').textContent = e.target.value + '%';
+    });
+    document.getElementById('p-wg').addEventListener('input', e => {
+      document.getElementById('v-wg').textContent = e.target.value;
+      updateWeekBar();
+    });
+    document.getElementById('c-ball').addEventListener('input', e => S.cBall = e.target.value);
+    document.getElementById('c-line').addEventListener('input', e => S.cLine = e.target.value);
+    document.getElementById('c-hill').addEventListener('input', e => S.cHill = e.target.value);
+    document.getElementById('c-sky').addEventListener('input', e => S.cSky = e.target.value);
+    document.getElementById('p-pitch').addEventListener('input', e => {
+      S.pitchShift = parseInt(e.target.value);
+      const prefix = S.pitchShift > 0 ? '+' : '';
+      document.getElementById('v-pitch').textContent = prefix + S.pitchShift;
+    });
+
+    document.getElementById('settings-toggle').addEventListener('click', () => {
+      document.getElementById('settings-panel').classList.toggle('open');
+    });
+
+    document.getElementById('ui').addEventListener('click', e => {
+      const panel = document.getElementById('settings-panel');
+      if (panel.classList.contains('open') && !panel.contains(e.target) && e.target !== document.getElementById('settings-toggle')) {
+        panel.classList.remove('open');
+      }
+    });
+
+    updateWeekBar();
+    setTimeout(() => {
+      const sessions = loadSessions();
+      const wc = weekCount(sessions);
+      const wg = parseInt(document.getElementById('p-wg').value);
+      const key = 'eva_cg_' + new Date().getFullYear() + '_' + weekNum(new Date());
+      if (wc >= wg && !localStorage.getItem(key)) {
+        localStorage.setItem(key, '1');
+        spawnConfetti();
+        document.getElementById('congrats').classList.add('show');
+      }
+    }, 800);
+
+    requestAnimationFrame(loop);
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(registration => {
+            console.log('ServiceWorker registriert.');
+          })
+          .catch(error => {
+            console.log('ServiceWorker Fehler:', error);
+          });
+      });
+    }
+  </script>
 </body>
+
 </html>
