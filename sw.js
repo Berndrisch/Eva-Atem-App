@@ -1,7 +1,7 @@
-const CACHE_NAME = 'eva-atem-app-v1';
+const CACHE_NAME = 'eva-atem-app-v2';
 const ASSETS_TO_CACHE = [
   './',
-  './index.html',
+  './index.htm',
   './manifest.json',
   // Die externe Google Font ebenfalls cachen:
   'https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap'
@@ -47,4 +47,11 @@ self.addEventListener('activate', event => {
       );
     })
   );
+});
+
+// Nachricht vom Client (der App) empfangen, um den neuen SW sofort zu aktivieren
+self.addEventListener('message', event => {
+  if (event.data === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });

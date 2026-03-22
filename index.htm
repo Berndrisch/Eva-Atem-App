@@ -104,6 +104,30 @@
       background: #5db83a
     }
 
+    /* Update button */
+    #update-btn {
+      position: absolute;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 24px;
+      border-radius: 50px;
+      background: #ff6b35;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 700;
+      pointer-events: auto;
+      box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
+      display: none;
+      z-index: 1000;
+      transition: transform 0.2s, background 0.2s;
+    }
+    #update-btn:active {
+      transform: translateX(-50%) scale(0.95);
+    }
+
     /* Start button */
     #start-btn {
       position: absolute;
@@ -471,6 +495,7 @@
       <div class="dots" id="wdots"></div>
     </div>
 
+    <button id="update-btn">App aktualisieren!</button>
     <button id="start-btn">▶</button>
     <button id="settings-toggle">⚙️</button>
     <button id="sound-btn">🔊</button>
@@ -1498,10 +1523,47 @@
   </script>
   <script>
     if ('serviceWorker' in navigator) {
+      let refreshing = false;
+      // Sorgt dafür, dass die Seite nach Aktivierung des neuen SW automatisch neu lädt
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+          window.location.reload();
+          refreshing = true;
+        }
+      });
+
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
           .then(registration => {
             console.log('ServiceWorker registriert.');
+
+            // Wenn schon ein ServiceWorker im "waiting"-Zustand ist
+            if (registration.waiting) {
+              showUpdateBanner(registration.waiting);
+            }
+
+            // Auf neue Updates lauschen
+            registration.addEventListener('updatefound', () => {
+              const newWorker = registration.installing;
+              newWorker.addEventListener('statechange', () => {
+                // Wenn der neue SW fertig installiert, aber noch nicht aktiv ist
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  showUpdateBanner(newWorker);
+                }
+              });
+            });
+
+            function showUpdateBanner(worker) {
+              const btn = document.getElementById('update-btn');
+              if (btn) {
+                btn.style.display = 'block';
+                btn.onclick = () => {
+                  btn.textContent = 'Wird aktualisiert...';
+                  // Sendet dem im Hintergrund wartenden SW die Anweisung, aktiv zu werden
+                  worker.postMessage('SKIP_WAITING');
+                };
+              }
+            }
           })
           .catch(error => {
             console.log('ServiceWorker Fehler:', error);
